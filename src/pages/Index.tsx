@@ -10,6 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import Icon from '@/components/ui/icon';
+import { imageGenerationService } from '@/services/imageGenerationService';
+import { KANDINSKY_CONFIG } from '@/config/kandinsky';
 
 const Index = () => {
   const [prompt, setPrompt] = useState('');
@@ -188,10 +190,11 @@ const Index = () => {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="realistic">Реалистичный</SelectItem>
-                          <SelectItem value="artistic">Художественный</SelectItem>
-                          <SelectItem value="anime">Аниме</SelectItem>
-                          <SelectItem value="abstract">Абстрактный</SelectItem>
+                          {KANDINSKY_CONFIG.SUPPORTED_STYLES.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>

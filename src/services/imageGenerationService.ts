@@ -1,5 +1,4 @@
-// Real image generation service using the built-in generate_image tool
-// This simulates how a real service would work
+import { KANDINSKY_CONFIG } from '@/config/kandinsky';
 
 export interface ImageGenerationRequest {
   prompt: string;
@@ -15,20 +14,56 @@ export interface ImageGenerationResult {
 }
 
 class ImageGenerationService {
-  private async callGenerateImageAPI(prompt: string): Promise<string> {
-    // In a real implementation, this would make an API call to our backend
-    // which would then use the generate_image tool
-    // For now, we'll simulate this process
+  private async callKandinskyAPI(prompt: string, style: string = 'realistic', aspectRatio: string = '1:1', steps: number = 20): Promise<string> {
+    const ratioConfig = KANDINSKY_CONFIG.SUPPORTED_RATIOS.find(r => r.value === aspectRatio) || KANDINSKY_CONFIG.SUPPORTED_RATIOS[0];
     
-    return new Promise((resolve, reject) => {
-      // Simulate API call delay
-      setTimeout(() => {
-        // This would normally be handled by the backend
-        // For demo, we'll generate a unique identifier and use placeholder
-        const imageId = Math.random().toString(36).substring(7);
-        resolve(`/img/generated-${imageId}.jpg`);
-      }, 2000 + Math.random() * 3000); // 2-5 second delay
-    });
+    const requestBody = {
+      prompt: prompt,
+      negative_prompt: 'blurry, low quality, distorted, watermark',
+      style: style,
+      samples: 1,
+      width: ratioConfig.width,
+      height: ratioConfig.height,
+      steps: Math.min(Math.max(steps, 10), 50),
+      guidance_scale: 7.5,
+      seed: Math.floor(Math.random() * 1000000)
+    };
+
+    try {
+      const response = await fetch(KANDINSKY_CONFIG.BASE_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': KANDINSKY_CONFIG.API_KEY
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status} ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.image) {
+        // Convert base64 to blob URL for display
+        const base64Data = result.image;
+        const byteCharacters = atob(base64Data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'image/png' });
+        const imageUrl = URL.createObjectURL(blob);
+        return imageUrl;
+      } else {
+        throw new Error('No image returned from API');
+      }
+    } catch (error) {
+      console.error('Kandinsky API Error:', error);
+      throw error;
+    }
   }
 
   async generateImage(request: ImageGenerationRequest): Promise<ImageGenerationResult> {
@@ -49,8 +84,13 @@ class ImageGenerationService {
       
       enhancedPrompt += ', high quality, detailed, professional';
 
-      // Call the image generation API
-      const imageUrl = await this.callGenerateImageAPI(enhancedPrompt);
+      // Call Kandinsky API
+      const imageUrl = await this.callKandinskyAPI(
+        enhancedPrompt,
+        request.style || 'realistic',
+        request.aspectRatio || '1:1',
+        request.steps || 20
+      );
 
       return {
         success: true,
