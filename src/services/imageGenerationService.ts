@@ -14,26 +14,55 @@ export interface ImageGenerationResult {
 }
 
 class ImageGenerationService {
-  private async callBuiltInGenerator(prompt: string): Promise<string> {
-    // Use the built-in generate_image tool for now
-    // This will be replaced with Kandinsky API when we fix CORS issues
+  private async callKandinskyAPI(prompt: string, style: string = 'realistic', aspectRatio: string = '1:1', steps: number = 20): Promise<string> {
+    const ratioConfig = KANDINSKY_CONFIG.SUPPORTED_RATIOS.find(r => r.value === aspectRatio) || KANDINSKY_CONFIG.SUPPORTED_RATIOS[0];
+    
+    const requestBody = {
+      prompt: prompt,
+      negative_prompt: 'blurry, low quality, distorted, watermark',
+      style: style,
+      samples: 1,
+      width: ratioConfig.width,
+      height: ratioConfig.height,
+      steps: Math.min(Math.max(steps, 10), 50),
+      guidance_scale: 7.5,
+      seed: Math.floor(Math.random() * 1000000)
+    };
+
     try {
-      // Simulate generating with the built-in tool
-      const imagePromises = [
-        '/img/48d9c040-e416-4cdf-b74f-261dd6da0bfb.jpg',
-        '/img/26b90f6e-6d79-42a4-9aad-23b40a9860f5.jpg',
-        '/img/7ee41c08-9b95-411b-91be-e41b267dc46f.jpg'
-      ];
+      const response = await fetch(KANDINSKY_CONFIG.BASE_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': KANDINSKY_CONFIG.API_KEY
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`API Error: ${response.status} ${response.statusText} - ${errorText}`);
+      }
+
+      const result = await response.json();
       
-      // Return a random existing image for now
-      const randomImage = imagePromises[Math.floor(Math.random() * imagePromises.length)];
-      
-      // Add some delay to simulate generation
-      await new Promise(resolve => setTimeout(resolve, 2000 + Math.random() * 3000));
-      
-      return randomImage;
+      if (result.image) {
+        // Convert base64 to blob URL for display
+        const base64Data = result.image;
+        const byteCharacters = atob(base64Data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'image/png' });
+        const imageUrl = URL.createObjectURL(blob);
+        return imageUrl;
+      } else {
+        throw new Error('No image returned from API');
+      }
     } catch (error) {
-      console.error('Built-in generator error:', error);
+      console.error('Kandinsky API Error:', error);
       throw error;
     }
   }
@@ -56,8 +85,13 @@ class ImageGenerationService {
       
       enhancedPrompt += ', high quality, detailed, professional';
 
-      // Call built-in generator for now
-      const imageUrl = await this.callBuiltInGenerator(enhancedPrompt);
+      // Call Kandinsky API
+      const imageUrl = await this.callKandinskyAPI(
+        enhancedPrompt,
+        request.style || 'realistic',
+        request.aspectRatio || '1:1',
+        request.steps || 20
+      );
 
       return {
         success: true,
