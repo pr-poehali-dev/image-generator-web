@@ -69,11 +69,13 @@ const Index = () => {
     if (!prompt.trim()) return;
     
     setIsGenerating(true);
-    // Simulate AI generation
+    // TODO: Integrate with real AI image generation API
+    alert('⚠️ Реальная ИИ-генерация изображений находится в разработке! Следите за обновлениями в нашем Telegram: https://t.me/+QgiLIa1gFRY4Y2Iy');
+    
     setTimeout(() => {
       setGeneratedImage('/img/26b90f6e-6d79-42a4-9aad-23b40a9860f5.jpg');
       setIsGenerating(false);
-    }, 3000);
+    }, 1000);
   };
 
   const handleGoogleAuth = () => {
@@ -91,7 +93,7 @@ const Index = () => {
                 <Icon name="Sparkles" size={20} className="text-white" />
               </div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                AI IMAGE GENERATOR
+                fotoMan ai
               </h1>
             </div>
             
