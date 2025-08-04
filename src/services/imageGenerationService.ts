@@ -30,6 +30,11 @@ class ImageGenerationService {
     };
 
     try {
+      console.log('🚀 Отправляю запрос к Kandinsky API:', {
+        url: KANDINSKY_CONFIG.BASE_URL,
+        body: requestBody
+      });
+
       const response = await fetch(KANDINSKY_CONFIG.BASE_URL, {
         method: 'POST',
         headers: {
@@ -39,12 +44,20 @@ class ImageGenerationService {
         body: JSON.stringify(requestBody)
       });
 
+      console.log('📡 Ответ API:', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries())
+      });
+
       if (!response.ok) {
         const errorText = await response.text();
+        console.error('❌ Ошибка API:', errorText);
         throw new Error(`API Error: ${response.status} ${response.statusText} - ${errorText}`);
       }
 
       const result = await response.json();
+      console.log('✅ Результат API:', result);
       
       if (result.image) {
         // Convert base64 to blob URL for display
@@ -62,9 +75,23 @@ class ImageGenerationService {
         throw new Error('No image returned from API');
       }
     } catch (error) {
-      console.error('Kandinsky API Error:', error);
-      throw error;
+      console.error('❌ Kandinsky API Error:', error);
+      
+      // Fallback to mock generation if API fails
+      console.log('🔄 Переключаюсь на резервный режим...');
+      return this.getMockImage();
     }
+  }
+
+  private getMockImage(): string {
+    const mockImages = [
+      '/img/48d9c040-e416-4cdf-b74f-261dd6da0bfb.jpg',
+      '/img/26b90f6e-6d79-42a4-9aad-23b40a9860f5.jpg', 
+      '/img/7ee41c08-9b95-411b-91be-e41b267dc46f.jpg'
+    ];
+    
+    return mockImages[Math.floor(Math.random() * mockImages.length)];
+  }
   }
 
   async generateImage(request: ImageGenerationRequest): Promise<ImageGenerationResult> {
