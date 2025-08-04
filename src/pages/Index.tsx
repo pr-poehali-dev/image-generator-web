@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { imageGenerationService } from '@/services/imageGenerationService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -70,26 +69,13 @@ const Index = () => {
     if (!prompt.trim()) return;
     
     setIsGenerating(true);
+    // TODO: Integrate with real AI image generation API
+    alert('⚠️ Реальная ИИ-генерация изображений находится в разработке! Следите за обновлениями в нашем Telegram: https://t.me/+QgiLIa1gFRY4Y2Iy');
     
-    try {
-      const result = await imageGenerationService.generateImage({
-        prompt: prompt,
-        style: style,
-        aspectRatio: aspectRatio,  
-        steps: steps[0]
-      });
-
-      if (result.success && result.imageUrl) {
-        setGeneratedImage(result.imageUrl);
-      } else {
-        throw new Error(result.error || 'Ошибка генерации изображения');
-      }
-    } catch (error) {
-      console.error('Error generating image:', error);
-      alert('Произошла ошибка при генерации изображения. Попробуйте снова.');
-    } finally {
+    setTimeout(() => {
+      setGeneratedImage('/img/26b90f6e-6d79-42a4-9aad-23b40a9860f5.jpg');
       setIsGenerating(false);
-    }
+    }, 1000);
   };
 
   const handleGoogleAuth = () => {
